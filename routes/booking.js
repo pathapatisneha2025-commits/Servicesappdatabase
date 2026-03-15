@@ -7,27 +7,51 @@ const pool = require('../db'); // your PostgreSQL pool connection
 // ADD NEW BOOKING
 // ==================
 router.post('/add', async (req, res) => {
-  const { serviceId, serviceName, price, date, time, address, status } = req.body;
+  let { serviceId, serviceName, price, date, time, address, status } = req.body;
 
+  // 1️⃣ Validate required fields
   if (!serviceId || !serviceName || !price || !date || !time || !address) {
     return res.status(400).json({ message: 'All fields are required' });
   }
 
   try {
+    // 2️⃣ Parse and validate date
+    const parsedDate = new Date(date);
+    if (isNaN(parsedDate.getTime())) {
+      return res.status(400).json({ message: 'Invalid date format. Use YYYY-MM-DD.' });
+    }
+    const formattedDate = parsedDate.toISOString().split('T')[0]; // "YYYY-MM-DD"
+
+    // 3️⃣ Validate time (expecting "HH:MM:SS")
+    const timeRegex = /^([0-1]?[0-9]|2[0-3]):([0-5][0-9]):([0-5][0-9])$/;
+    if (!timeRegex.test(time)) {
+      return res.status(400).json({ message: 'Invalid time format. Use HH:MM:SS (24-hour).' });
+    }
+
+    // 4️⃣ Insert into DB
     const newBooking = await pool.query(
       `INSERT INTO serviceappbookings 
         (service_id, service_name, price, date, time, address, status) 
        VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING *`,
-      [serviceId, serviceName, price, date, time, address, status || 'pending'] // use default 'pending' if not provided
+      [
+        serviceId,
+        serviceName,
+        price,
+        formattedDate,
+        time,
+        address,
+        status || 'pending'
+      ]
     );
 
     res.status(201).json({
       message: 'Booking created successfully',
       booking: newBooking.rows[0]
     });
+
   } catch (err) {
-    console.error('Error creating booking:', err);
-    res.status(500).json({ message: 'Server error' });
+    console.error('Error creating booking:', err.message, err.stack);
+    res.status(500).json({ message: err.message });
   }
 });
 // ==================
