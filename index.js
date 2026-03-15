@@ -2,6 +2,8 @@ const express = require("express");
 const cors = require("cors");
 const Users = require("./routes/users");
 const Services = require("./routes/services");
+const Bookings = require("./routes/booking");
+
 
 
 
@@ -15,6 +17,8 @@ app.use(cors());
 app.use(express.json());
 app.use("/users", Users);
 app.use("/services",Services);
+app.use("/bookings",Bookings);
+
 
 
 
