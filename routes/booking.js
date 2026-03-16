@@ -125,4 +125,26 @@ router.put('/:id/status', async (req, res) => {
   }
 });
 
+// ==================
+// GET BOOKINGS BY CUSTOMER ID
+// ==================
+router.get('/customer/:customerId', async (req, res) => {
+  const { customerId } = req.params;
+
+  try {
+    const bookings = await pool.query(
+      'SELECT * FROM serviceappbookings WHERE customer_id = $1 ORDER BY created_at DESC',
+      [customerId]
+    );
+
+    res.json({
+      total: bookings.rows.length,
+      bookings: bookings.rows
+    });
+  } catch (err) {
+    console.error('Error fetching bookings for customer:', err);
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
 module.exports = router;
