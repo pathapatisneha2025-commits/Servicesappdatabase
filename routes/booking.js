@@ -3,11 +3,15 @@ const express = require('express');
 const router = express.Router();
 const pool = require('../db'); // your PostgreSQL pool connection
 
+
 // ==================
 // ADD NEW BOOKING
 // ==================
 router.post('/add', async (req, res) => {
   let { serviceId, serviceName, price, date, time, address, status } = req.body;
+
+  // Hardcoded customer ID
+  const customerId = 1; // 👈 direct customer_id
 
   // 1️⃣ Validate required fields
   if (!serviceId || !serviceName || !price || !date || !time || !address) {
@@ -28,12 +32,13 @@ router.post('/add', async (req, res) => {
       return res.status(400).json({ message: 'Invalid time format. Use HH:MM:SS (24-hour).' });
     }
 
-    // 4️⃣ Insert into DB
+    // 4️⃣ Insert into DB including hardcoded customerId
     const newBooking = await pool.query(
       `INSERT INTO serviceappbookings 
-        (service_id, service_name, price, date, time, address, status) 
-       VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING *`,
+        (customer_id, service_id, service_name, price, date, time, address, status) 
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8) RETURNING *`,
       [
+        customerId, // 👈 direct value
         serviceId,
         serviceName,
         price,
