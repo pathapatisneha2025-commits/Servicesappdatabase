@@ -99,7 +99,7 @@ router.get('/category/:serviceType', async (req, res) => {
 
   try {
     const bookings = await pool.query(
-      'SELECT * FROM bookings WHERE service_name = $1 ORDER BY date, time',
+      'SELECT * FROM serviceappbookings  WHERE service_name = $1 ORDER BY date, time',
       [serviceType]
     );
 
