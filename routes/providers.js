@@ -4,7 +4,7 @@ const bcrypt = require('bcryptjs');
 const pool = require('../db');
 const multer = require('multer');
 const { CloudinaryStorage } = require('multer-storage-cloudinary');
-const cloudinary = require('../config/cloudinary');
+const cloudinary = require('../cloudinary');
 
 // ==================
 // Multer + Cloudinary setup
