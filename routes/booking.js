@@ -62,7 +62,7 @@ router.post('/add', async (req, res) => {
 // ==================
 // GET ALL BOOKINGS
 // ==================
-router.get('/', async (req, res) => {
+router.get('/all', async (req, res) => {
   try {
     const bookings = await pool.query('SELECT * FROM serviceappbookings ORDER BY created_at DESC');
     res.json({
@@ -90,6 +90,25 @@ router.get('/:id', async (req, res) => {
     res.json(booking.rows[0]);
   } catch (err) {
     console.error('Error fetching booking:', err);
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
+router.get('/category/:serviceType', async (req, res) => {
+  const { serviceType } = req.params;
+
+  try {
+    const bookings = await pool.query(
+      'SELECT * FROM bookings WHERE service_name = $1 ORDER BY date, time',
+      [serviceType]
+    );
+
+    res.json({
+      total: bookings.rows.length,
+      bookings: bookings.rows
+    });
+  } catch (err) {
+    console.error(err);
     res.status(500).json({ message: 'Server error' });
   }
 });
