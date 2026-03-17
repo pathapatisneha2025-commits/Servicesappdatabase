@@ -6,6 +6,8 @@ const Users = require("./routes/users");
 const Services = require("./routes/services");
 const Bookings = require("./routes/booking");
 const Providers = require("./routes/providers");
+const Reviews = require("./routes/reviews");
+
 
 
 
@@ -22,6 +24,7 @@ app.use("/users", Users);
 app.use("/services",Services);
 app.use("/bookings",Bookings);
 app.use("/providers",Providers);
+app.use("/reviews",Reviews);
 
 
 
