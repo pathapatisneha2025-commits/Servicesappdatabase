@@ -4,9 +4,11 @@ const express = require("express");
 const cors = require("cors");
 const Users = require("./routes/users");
 const Services = require("./routes/services");
-const Bookings = require("./routes/booking");
+const Bookings = require("./routes/booking"); 
 const Providers = require("./routes/providers");
 const Reviews = require("./routes/reviews");
+const Notifcations = require("./routes/notifcation");
+
 
 
 
@@ -25,6 +27,8 @@ app.use("/services",Services);
 app.use("/bookings",Bookings);
 app.use("/providers",Providers);
 app.use("/reviews",Reviews);
+app.use("/notifications",Notifcations);
+
 
 
 
