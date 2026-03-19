@@ -23,7 +23,17 @@ router.post('/add', async (req, res) => {
     res.status(500).json({ success: false, message: 'Server error' });
   }
 });
-
+router.get('/all', async (req, res) => {
+  try {
+    const result = await pool.query(
+      `SELECT * FROM notifications ORDER BY created_at DESC`
+    );
+    res.status(200).json({ success: true, notifications: result.rows });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ success: false, message: 'Server error' });
+  }
+});
 // GET /notifications/:customerId - get all notifications for a customer
 router.get('/:customerId', async (req, res) => {
   const { customerId } = req.params;
@@ -56,15 +66,5 @@ router.put('/:id/read', async (req, res) => {
   }
 });
 // 2️⃣ Get all notifications (no customer filter)
-router.get('/all', async (req, res) => {
-  try {
-    const result = await pool.query(
-      `SELECT * FROM notifications ORDER BY created_at DESC`
-    );
-    res.status(200).json({ success: true, notifications: result.rows });
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ success: false, message: 'Server error' });
-  }
-});
+
 module.exports = router;
