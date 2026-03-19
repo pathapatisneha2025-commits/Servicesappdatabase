@@ -8,13 +8,22 @@ const pool = require('../db'); // your PostgreSQL pool connection
 // ADD NEW BOOKING
 // ==================
 router.post('/add', async (req, res) => {
-  let { serviceId, serviceName, price, date, time, address, status } = req.body;
-
-  // Hardcoded customer ID
-  const customerId = 1; // 👈 direct customer_id
+  let {
+    customerId,   // ✅ now coming from request
+    serviceId,
+    serviceName,
+    price,
+    date,
+    time,
+    address,
+    status,
+    coupon,
+    discount,
+    walletUsed
+  } = req.body;
 
   // 1️⃣ Validate required fields
-  if (!serviceId || !serviceName || !price || !date || !time || !address) {
+  if (!customerId || !serviceId || !serviceName || !price || !date || !time || !address) {
     return res.status(400).json({ message: 'All fields are required' });
   }
 
@@ -32,23 +41,25 @@ router.post('/add', async (req, res) => {
       return res.status(400).json({ message: 'Invalid time format. Use HH:MM:SS (24-hour).' });
     }
 
-    // 4️⃣ Insert into DB including hardcoded customerId
-    const newBooking = await pool.query(
-      `INSERT INTO serviceappbookings 
-        (customer_id, service_id, service_name, price, date, time, address, status) 
-       VALUES ($1, $2, $3, $4, $5, $6, $7, $8) RETURNING *`,
-      [
-        customerId, // 👈 direct value
-        serviceId,
-        serviceName,
-        price,
-        formattedDate,
-        time,
-        address,
-        status || 'pending'
-      ]
-    );
-
+    // 4️⃣ Insert into DB including coupon, discount, walletUsed
+   const newBooking = await pool.query(
+  `INSERT INTO serviceappbookings 
+    (customer_id, service_id, service_name, price, date, time, address, status, coupon, discount, wallet_used) 
+   VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11) RETURNING *`,
+  [
+    customerId,
+    serviceId,
+    serviceName,
+    price,
+    formattedDate,
+    time,
+    address,  // will now store as JSONB
+    status || 'pending',
+    coupon || null,
+    discount || 0,
+    walletUsed || 0
+  ]
+);
     res.status(201).json({
       message: 'Booking created successfully',
       booking: newBooking.rows[0]
