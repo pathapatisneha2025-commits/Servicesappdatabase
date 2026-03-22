@@ -107,7 +107,7 @@ router.post('/login', async (req, res) => {
 router.get('/all', async (req, res) => {
   try {
     const providers = await pool.query(
-      'SELECT id, full_name, email, phone, service_type, aadhaar_url, pan_url FROM servicesProvider_users ORDER BY id DESC'
+      'SELECT id, full_name, email, phone, service_type, aadhaar_url, pan_url,status FROM servicesProvider_users ORDER BY id DESC'
     );
     res.json({ total: providers.rows.length, providers: providers.rows });
   } catch (err) {
