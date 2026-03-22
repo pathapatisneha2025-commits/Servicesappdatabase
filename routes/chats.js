@@ -42,10 +42,18 @@ router.get('/:bookingId', async (req, res) => {
 
   try {
     const result = await pool.query(
-      `SELECT *
-       FROM chats
-       WHERE booking_id = $1
-       ORDER BY created_at ASC`,
+      `
+      SELECT c.id, c.booking_id, c.sender_id, c.sender_role, c.message, c.created_at,
+             CASE 
+               WHEN c.sender_role = 'customer' THEN u.name
+               WHEN c.sender_role = 'provider' THEN p.name
+             END AS sender_name
+      FROM chats c
+      LEFT JOIN services_user u ON c.sender_role = 'customer' AND c.sender_id = u.id
+      LEFT JOIN servicesProvider_users p ON c.sender_role = 'provider' AND c.sender_id = p.id
+      WHERE c.booking_id = $1
+      ORDER BY c.created_at ASC
+      `,
       [bookingId]
     );
 
