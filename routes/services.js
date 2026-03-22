@@ -5,7 +5,7 @@ const pool = require('../db'); // your PostgreSQL pool connection
 // ==================
 // ADD SERVICE
 // ==================
-router.post('/add', async (req, res) => {
+router.post('/add', async (req, res) => { 
   const {
     name,
     icon,
@@ -15,16 +15,17 @@ router.post('/add', async (req, res) => {
     price,
     rating,
     reviews,
-    is_popular
+    is_popular,
+    description
   } = req.body;
 
   try {
     const newService = await pool.query(
       `INSERT INTO servicesapp 
-      (name, icon, color, image_url, category, price, rating, reviews, is_popular)
-      VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9)
+      (name, icon, color, image_url, category, price, rating, reviews, is_popular, description)
+      VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10)
       RETURNING *`,
-      [name, icon, color, image_url, category, price, rating, reviews, is_popular]
+      [name, icon, color, image_url, category, price, rating, reviews, is_popular, description]
     );
 
     res.status(201).json({
