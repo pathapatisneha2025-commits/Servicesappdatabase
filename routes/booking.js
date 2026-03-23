@@ -75,7 +75,17 @@ router.post('/add', async (req, res) => {
 // ==================
 router.get('/all', async (req, res) => {
   try {
-    const bookings = await pool.query('SELECT * FROM serviceappbookings ORDER BY created_at DESC');
+    const bookings = await pool.query(`
+      SELECT 
+        b.*, 
+        u.name AS customer_name,
+        u.phone AS customer_phone
+      FROM serviceappbookings b
+      LEFT JOIN services_users u 
+      ON b.customer_id = u.id
+      ORDER BY b.created_at DESC
+    `);
+
     res.json({
       total: bookings.rows.length,
       bookings: bookings.rows
@@ -85,7 +95,6 @@ router.get('/all', async (req, res) => {
     res.status(500).json({ message: 'Server error' });
   }
 });
-
 // ==================
 // GET BOOKING BY ID
 // ==================
