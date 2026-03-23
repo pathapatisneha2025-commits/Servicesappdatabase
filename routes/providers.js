@@ -133,5 +133,31 @@ router.get('/:id', async (req, res) => {
     res.status(500).json({ message: 'Server error' });
   }
 });
+router.put('/:id/status', async (req, res) => {
+  const { id } = req.params;
+  const { status } = req.body; // should be "Approved" or "Rejected"
 
+  if (!status || !['Approved', 'Rejected'].includes(status)) {
+    return res.status(400).json({ message: 'Invalid status. Use "Approved" or "Rejected".' });
+  }
+
+  try {
+    const updated = await pool.query(
+      'UPDATE servicesProvider_users SET status = $1 WHERE id = $2 RETURNING *',
+      [status, id]
+    );
+
+    if (updated.rows.length === 0) {
+      return res.status(404).json({ message: 'Provider not found' });
+    }
+
+    res.json({
+      message: `Provider ${status.toLowerCase()} successfully`,
+      provider: updated.rows[0],
+    });
+  } catch (err) {
+    console.error('Error updating provider status:', err);
+    res.status(500).json({ message: 'Server error' });
+  }
+});
 module.exports = router;
