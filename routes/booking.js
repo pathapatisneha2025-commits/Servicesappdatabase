@@ -78,7 +78,7 @@ router.get('/all', async (req, res) => {
     const bookings = await pool.query(`
       SELECT 
         b.*, 
-        u.name AS customer_name,
+        u.full_name AS customer_name,
         u.phone AS customer_phone
       FROM serviceappbookings b
       LEFT JOIN services_users u 
