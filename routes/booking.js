@@ -78,11 +78,15 @@ router.get('/all', async (req, res) => {
     const bookings = await pool.query(`
       SELECT 
         b.*, 
-        u.full_name AS customer_name,
-        u.phone AS customer_phone
+        c.full_name AS customer_name,
+        c.phone AS customer_phone,
+        p.full_name AS provider_name,
+        p.phone AS provider_phone
       FROM serviceappbookings b
-      LEFT JOIN services_users u 
-      ON b.customer_id = u.id
+      LEFT JOIN services_users c 
+        ON b.customer_id = c.id
+      LEFT JOIN servicesProvider_users p
+        ON b.provider_id = p.id
       ORDER BY b.created_at DESC
     `);
 
