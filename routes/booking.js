@@ -138,24 +138,34 @@ router.get('/category/:serviceType', async (req, res) => {
 // ==================
 router.put('/:id/status', async (req, res) => {
   const { id } = req.params;
-  const { status } = req.body;
+  const { status, provider_id } = req.body;
 
   if (!status) {
     return res.status(400).json({ message: 'Status is required' });
   }
 
   try {
-    const updatedBooking = await pool.query(
-      'UPDATE serviceappbookings SET status = $1 WHERE id = $2 RETURNING *',
-      [status, id]
-    );
+    let updatedBooking;
+
+    // If provider_id is provided, update both
+    if (provider_id) {
+      updatedBooking = await pool.query(
+        'UPDATE serviceappbookings SET status = $1, provider_id = $2 WHERE id = $3 RETURNING *',
+        [status, provider_id, id]
+      );
+    } else {
+      updatedBooking = await pool.query(
+        'UPDATE serviceappbookings SET status = $1 WHERE id = $2 RETURNING *',
+        [status, id]
+      );
+    }
 
     if (updatedBooking.rows.length === 0) {
       return res.status(404).json({ message: 'Booking not found' });
     }
 
     res.json({
-      message: 'Booking status updated',
+      message: 'Booking updated successfully',
       booking: updatedBooking.rows[0]
     });
   } catch (err) {
@@ -163,7 +173,6 @@ router.put('/:id/status', async (req, res) => {
     res.status(500).json({ message: 'Server error' });
   }
 });
-
 // ==================
 // GET BOOKINGS BY CUSTOMER ID
 // ==================
