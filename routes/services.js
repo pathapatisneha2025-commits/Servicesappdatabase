@@ -142,7 +142,7 @@ router.put('/update/:id', async (req, res) => {
 // ==================
 // DELETE SERVICE
 // ==================
-router.delete('/delete:id', async (req, res) => {
+router.delete('/delete/:id', async (req, res) => {
   const { id } = req.params;
 
   try {
