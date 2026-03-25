@@ -9,6 +9,8 @@ const Providers = require("./routes/providers");
 const Reviews = require("./routes/reviews");
 const Notifcations = require("./routes/notifcation");
 const Chatmessages = require("./routes/chats");
+const Coupons = require("./routes/coupon");
+
 
 
 
@@ -31,6 +33,8 @@ app.use("/providers",Providers);
 app.use("/reviews",Reviews);
 app.use("/notifications",Notifcations);
 app.use("/chats",Chatmessages);
+app.use("/coupon",Coupons);
+
 
 
 
