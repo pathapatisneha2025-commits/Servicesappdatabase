@@ -10,13 +10,13 @@ router.post('/add', async (req, res) => {
 
   try {
     // Check if code already exists
-    const existing = await pool.query('SELECT * FROM coupons WHERE code = $1', [code.toUpperCase()]);
+    const existing = await pool.query('SELECT * FROM servicesappcoupons WHERE code = $1', [code.toUpperCase()]);
     if (existing.rows.length > 0) {
       return res.status(400).json({ message: 'Coupon code already exists' });
     }
 
     const newCoupon = await pool.query(
-      `INSERT INTO coupons 
+      `INSERT INTO servicesappcoupons
       (code, discount_percent, usage_limit, used_count, start_date, end_date, is_active)
       VALUES ($1,$2,$3,0,$4,$5,true)
       RETURNING *`,
@@ -35,7 +35,7 @@ router.post('/add', async (req, res) => {
 // ==================
 router.get('/all', async (req, res) => {
   try {
-    const coupons = await pool.query('SELECT * FROM coupons ORDER BY id DESC');
+    const coupons = await pool.query('SELECT * FROM servicesappcoupons ORDER BY id DESC');
     res.json({ total: coupons.rows.length, coupons: coupons.rows });
   } catch (err) {
     console.error(err);
@@ -49,7 +49,7 @@ router.get('/all', async (req, res) => {
 router.get('/:id', async (req, res) => {
   const { id } = req.params;
   try {
-    const coupon = await pool.query('SELECT * FROM coupons WHERE id = $1', [id]);
+    const coupon = await pool.query('SELECT * FROM servicesappcoupons WHERE id = $1', [id]);
     if (coupon.rows.length === 0) return res.status(404).json({ message: 'Coupon not found' });
     res.json(coupon.rows[0]);
   } catch (err) {
@@ -67,7 +67,7 @@ router.put('/update/:id', async (req, res) => {
 
   try {
     const updated = await pool.query(
-      `UPDATE coupons SET
+      `UPDATE servicesappcoupons SET
       code = $1,
       discount_percent = $2,
       usage_limit = $3,
@@ -95,7 +95,7 @@ router.delete('/delete/:id', async (req, res) => {
   const { id } = req.params;
 
   try {
-    const deleted = await pool.query('DELETE FROM coupons WHERE id = $1 RETURNING *', [id]);
+    const deleted = await pool.query('DELETE FROM servicesappcoupons WHERE id = $1 RETURNING *', [id]);
     if (deleted.rows.length === 0) return res.status(404).json({ message: 'Coupon not found' });
 
     res.json({ message: 'Coupon deleted successfully', coupon: deleted.rows[0] });
