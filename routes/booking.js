@@ -66,7 +66,7 @@ router.post('/add', async (req, res) => {
 
         // Deduct wallet
         await client.query(
-          'UPDATE services_users SET wallet_balance = balance - $1 WHERE id = $2',
+          'UPDATE services_users SET wallet_balance = wallet_balance - $1 WHERE id = $2',
           [walletUsed, customerId]
         );
       }
