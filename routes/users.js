@@ -54,10 +54,11 @@ router.post('/login', async (req, res) => {
     if (!isMatch) return res.status(400).json({ message: 'Invalid credentials' });
 
     // Just return wallet_balance set by admin
-    res.json({
-      message: 'Login successful',
-      wallet_balance: user.wallet_balance
-    });
+   res.json({
+  message: 'Login successful',
+  wallet_balance: user.wallet_balance,
+  user: { id: user.id, full_name: user.full_name, email: user.email } // add user object
+});
 
   } catch (err) {
     console.error(err);
