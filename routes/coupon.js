@@ -104,5 +104,25 @@ router.delete('/delete/:id', async (req, res) => {
     res.status(500).json({ message: 'Server error' });
   }
 });
+// ==================
+// GET ACTIVE COUPONS
+// ==================
+router.get('/active', async (req, res) => {
+  try {
+    const now = new Date();
+    const coupons = await pool.query(
+      `SELECT * FROM servicesappcoupons 
+       WHERE is_active = true 
+       AND (start_date IS NULL OR start_date <= $1)
+       AND (end_date IS NULL OR end_date >= $1)
+       ORDER BY id DESC`,
+      [now]
+    );
+    res.json({ total: coupons.rows.length, coupons: coupons.rows });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: 'Server error' });
+  }
+});
 
 module.exports = router;
