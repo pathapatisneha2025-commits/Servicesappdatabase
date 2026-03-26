@@ -21,10 +21,10 @@ router.post('/add', async (req, res) => {
   try {
     const newService = await pool.query(
       `INSERT INTO servicesapp 
-      (name, icon, color, image_url, category, price, rating, reviews, is_popular, description)
-      VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10)
+      (name, icon, image_url, category, price, rating, reviews, is_popular, description)
+      VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9)
       RETURNING *`,
-      [name, icon,  image_url, category, price, rating, reviews, is_popular, description]
+      [name, icon, image_url, category, price, rating, reviews, is_popular, description]
     );
 
     res.status(201).json({
