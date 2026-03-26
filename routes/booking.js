@@ -50,7 +50,7 @@ router.post('/add', async (req, res) => {
       if (walletUsed && walletUsed > 0) {
         // Get current wallet balance
         const walletRes = await client.query(
-          'SELECT wallet_balance FROM services_users WHERE customer_id = $1 FOR UPDATE',
+          'SELECT wallet_balance FROM services_users WHERE id = $1 FOR UPDATE',
           [customerId]
         );
 
@@ -66,7 +66,7 @@ router.post('/add', async (req, res) => {
 
         // Deduct wallet
         await client.query(
-          'UPDATE services_users SET wallet_balance = balance - $1 WHERE customer_id = $2',
+          'UPDATE services_users SET wallet_balance = balance - $1 WHERE id = $2',
           [walletUsed, customerId]
         );
       }
