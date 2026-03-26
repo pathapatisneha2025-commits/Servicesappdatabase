@@ -39,26 +39,35 @@ router.post('/login', async (req, res) => {
   const { email, phone, password } = req.body;
 
   try {
-    if ((!email && !phone) || !password) 
-      return res.status(400).json({ message: 'Email or phone and password required' });
-
     const userQuery = email
       ? await pool.query('SELECT * FROM services_users WHERE email = $1', [email])
       : await pool.query('SELECT * FROM services_users WHERE phone = $1', [phone]);
 
-    if (userQuery.rows.length === 0) 
+    if (userQuery.rows.length === 0)
       return res.status(400).json({ message: 'Invalid credentials' });
 
     const user = userQuery.rows[0];
     const isMatch = await bcrypt.compare(password, user.password);
     if (!isMatch) return res.status(400).json({ message: 'Invalid credentials' });
 
-    // Just return wallet_balance set by admin
-   res.json({
-  message: 'Login successful',
-  wallet_balance: user.wallet_balance,
-  user: { id: user.id, full_name: user.full_name, email: user.email } // add user object
-});
+    // ✅ Give wallet only first time
+    if (!user.wallet_given) {
+      await pool.query(
+        `UPDATE services_users
+         SET wallet_balance = wallet_balance + 100,
+             wallet_given = TRUE
+         WHERE id = $1`,
+        [user.id]
+      );
+
+      user.wallet_balance += 100;
+    }
+
+    res.json({
+      message: 'Login successful',
+      wallet_balance: user.wallet_balance,
+      user: { id: user.id, full_name: user.full_name, email: user.email }
+    });
 
   } catch (err) {
     console.error(err);
@@ -102,16 +111,23 @@ router.get('/:id/wallet', async (req, res) => {
 // ==================
 // UPDATE WALLET FOR ALL USERS
 // ==================
-router.put('/wallet', async (req, res) => {
+router.put('/wallet/one-time', async (req, res) => {
   const { amount } = req.body;
+
   try {
     const result = await pool.query(
       `UPDATE services_users
-       SET wallet_balance = $1
-       RETURNING id`
+       SET wallet_balance = wallet_balance + $1,
+           wallet_given = TRUE
+       WHERE wallet_given = FALSE
+       RETURNING id, wallet_balance`
       , [amount]
     );
-    res.json({ message: 'Wallet updated successfully', updatedCount: result.rows.length });
+
+    res.json({
+      message: 'Wallet added only to new users',
+      updatedUsers: result.rows.length
+    });
   } catch (err) {
     console.error(err);
     res.status(500).json({ message: 'Server error' });
