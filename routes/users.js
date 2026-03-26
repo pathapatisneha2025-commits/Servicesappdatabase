@@ -82,28 +82,21 @@ router.get('/:id/wallet', async (req, res) => {
 });
 
 // ==================
-// UPDATE USER WALLET (ADMIN)
+// UPDATE WALLET FOR ALL USERS
 // ==================
-router.put('/:id/wallet', async (req, res) => {
-  const { id } = req.params;
+router.put('/wallet', async (req, res) => {
   const { amount } = req.body;
-
   try {
     const result = await pool.query(
       `UPDATE services_users
        SET wallet_balance = $1
-       WHERE id = $2
-       RETURNING wallet_balance`,
-      [amount, id]
+       RETURNING id`
+      , [amount]
     );
-    if (result.rows.length === 0)
-      return res.status(404).json({ message: 'User not found' });
-
-    res.json({ message: 'Wallet updated successfully', wallet: result.rows[0] });
+    res.json({ message: 'Wallet updated successfully', updatedCount: result.rows.length });
   } catch (err) {
     console.error(err);
     res.status(500).json({ message: 'Server error' });
   }
 });
-
 module.exports = router;
