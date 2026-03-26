@@ -9,7 +9,7 @@ const pool = require('../db'); // your PostgreSQL pool connection
 // ==================
 router.post('/add', async (req, res) => {
   let {
-    customerId,   // ✅ now coming from request
+    customerId,
     serviceId,
     serviceName,
     price,
@@ -41,32 +41,72 @@ router.post('/add', async (req, res) => {
       return res.status(400).json({ message: 'Invalid time format. Use HH:MM:SS (24-hour).' });
     }
 
-    // 4️⃣ Insert into DB including coupon, discount, walletUsed
-   const newBooking = await pool.query(
-  `INSERT INTO serviceappbookings 
-    (customer_id, service_id, service_name, price, date, time, address, status, coupon, discount, wallet_used) 
-   VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11) RETURNING *`,
-  [
-    customerId,
-    serviceId,
-    serviceName,
-    price,
-    formattedDate,
-    time,
-    address,  // will now store as JSONB
-    status || 'pending',
-    coupon || null,
-    discount || 0,
-    walletUsed || 0
-  ]
-);
-    res.status(201).json({
-      message: 'Booking created successfully',
-      booking: newBooking.rows[0]
-    });
+    // 4️⃣ Start a transaction so wallet update + booking insertion are atomic
+    const client = await pool.connect();
+    try {
+      await client.query('BEGIN');
+
+      // 5️⃣ Deduct wallet if used
+      if (walletUsed && walletUsed > 0) {
+        // Get current wallet balance
+        const walletRes = await client.query(
+          'SELECT balance FROM wallets WHERE customer_id = $1 FOR UPDATE',
+          [customerId]
+        );
+
+        if (walletRes.rows.length === 0) {
+          throw new Error('Wallet not found for this customer');
+        }
+
+        const currentBalance = parseFloat(walletRes.rows[0].balance);
+
+        if (walletUsed > currentBalance) {
+          throw new Error('Insufficient wallet balance');
+        }
+
+        // Deduct wallet
+        await client.query(
+          'UPDATE wallets SET balance = balance - $1 WHERE customer_id = $2',
+          [walletUsed, customerId]
+        );
+      }
+
+      // 6️⃣ Insert booking
+      const newBooking = await client.query(
+        `INSERT INTO serviceappbookings 
+          (customer_id, service_id, service_name, price, date, time, address, status, coupon, discount, wallet_used) 
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11) RETURNING *`,
+        [
+          customerId,
+          serviceId,
+          serviceName,
+          price,
+          formattedDate,
+          time,
+          address,
+          status || 'pending',
+          coupon || null,
+          discount || 0,
+          walletUsed || 0
+        ]
+      );
+
+      await client.query('COMMIT');
+
+      res.status(201).json({
+        message: 'Booking created successfully',
+        booking: newBooking.rows[0]
+      });
+    } catch (err) {
+      await client.query('ROLLBACK');
+      console.error('Transaction error:', err.message);
+      res.status(500).json({ message: err.message });
+    } finally {
+      client.release();
+    }
 
   } catch (err) {
-    console.error('Error creating booking:', err.message, err.stack);
+    console.error('Error creating booking:', err.message);
     res.status(500).json({ message: err.message });
   }
 });
