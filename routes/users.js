@@ -64,6 +64,23 @@ router.post('/login', async (req, res) => {
     res.status(500).json({ message: 'Server error' });
   }
 });
+router.get('/:id', async (req, res) => {
+  const { id } = req.params;
+
+  try {
+    const user = await pool.query(
+      'SELECT id, full_name, email, phone, wallet_balance FROM services_users WHERE id = $1',
+      [id]
+    );
+    if (user.rows.length === 0)
+      return res.status(404).json({ message: 'User not found' });
+
+    res.json(user.rows[0]);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: 'Server error' });
+  }
+});
 // ==================
 // GET WALLET INFO BY USER ID
 // ==================
