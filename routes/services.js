@@ -9,7 +9,6 @@ router.post('/add', async (req, res) => {
   const {
     name,
     icon,
-    color,
     image_url,
     category,
     price,
@@ -25,7 +24,7 @@ router.post('/add', async (req, res) => {
       (name, icon, color, image_url, category, price, rating, reviews, is_popular, description)
       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10)
       RETURNING *`,
-      [name, icon, color, image_url, category, price, rating, reviews, is_popular, description]
+      [name, icon,  image_url, category, price, rating, reviews, is_popular, description]
     );
 
     res.status(201).json({
@@ -41,7 +40,7 @@ router.post('/add', async (req, res) => {
 // ==================
 // GET ALL SERVICES
 // ==================
-router.get('/', async (req, res) => {
+router.get('/all', async (req, res) => {
   try {
     const services = await pool.query('SELECT * FROM servicesapp ORDER BY id ASC');
     res.json({
