@@ -3,7 +3,6 @@ const router = express.Router();
 const bcrypt = require('bcryptjs');
 const pool = require('../db');
 
-
 // ==================
 // REGISTER
 // ==================
@@ -11,102 +10,53 @@ router.post('/register', async (req, res) => {
   const { fullName, email, phone, password } = req.body;
 
   try {
+    const emailCheck = await pool.query('SELECT * FROM services_users WHERE email = $1', [email]);
+    if (emailCheck.rows.length > 0) return res.status(400).json({ message: 'Email already registered' });
 
-    // Check if email already exists
-    const emailCheck = await pool.query(
-      'SELECT * FROM services_users WHERE email = $1',
-      [email]
-    );
+    const phoneCheck = await pool.query('SELECT * FROM services_users WHERE phone = $1', [phone]);
+    if (phoneCheck.rows.length > 0) return res.status(400).json({ message: 'Phone already registered' });
 
-    if (emailCheck.rows.length > 0) {
-      return res.status(400).json({ message: 'Email already registered' });
-    }
-
-    // Check if phone already exists
-    const phoneCheck = await pool.query(
-      'SELECT * FROM services_users WHERE phone = $1',
-      [phone]
-    );
-
-    if (phoneCheck.rows.length > 0) {
-      return res.status(400).json({ message: 'Phone already registered' });
-    }
-
-    // Hash password
     const salt = await bcrypt.genSalt(10);
     const hashedPassword = await bcrypt.hash(password, salt);
 
-    // Insert user
+    // Insert user with wallet balance 0
     const newUser = await pool.query(
       `INSERT INTO services_users 
-      (full_name, email, phone, password) 
-      VALUES ($1,$2,$3,$4) 
-      RETURNING id, full_name, email, phone`,
+        (full_name, email, phone, password, wallet_balance) 
+       VALUES ($1,$2,$3,$4,0)
+       RETURNING wallet_balance`,
       [fullName, email, phone, hashedPassword]
     );
 
-    res.status(201).json({
-      message: 'User registered successfully',
-      user: newUser.rows[0]
-    });
-
+    res.status(201).json({ message: 'User registered successfully', wallet: newUser.rows[0] });
   } catch (err) {
     console.error(err);
     res.status(500).json({ message: 'Server error' });
   }
 });
 
-
-// ==================
-// LOGIN (PHONE OR EMAIL)
-// ==================
 router.post('/login', async (req, res) => {
   const { email, phone, password } = req.body;
 
   try {
-
-    if ((!email && !phone) || !password) {
+    if ((!email && !phone) || !password) 
       return res.status(400).json({ message: 'Email or phone and password required' });
-    }
 
-    let userQuery;
+    const userQuery = email
+      ? await pool.query('SELECT * FROM services_users WHERE email = $1', [email])
+      : await pool.query('SELECT * FROM services_users WHERE phone = $1', [phone]);
 
-    // Find user by email
-    if (email) {
-      userQuery = await pool.query(
-        'SELECT * FROM services_users WHERE email = $1',
-        [email]
-      );
-    }
-    // Find user by phone
-    else {
-      userQuery = await pool.query(
-        'SELECT * FROM services_users WHERE phone = $1',
-        [phone]
-      );
-    }
-
-    if (userQuery.rows.length === 0) {
+    if (userQuery.rows.length === 0) 
       return res.status(400).json({ message: 'Invalid credentials' });
-    }
 
     const user = userQuery.rows[0];
-
-    // Compare password
     const isMatch = await bcrypt.compare(password, user.password);
+    if (!isMatch) return res.status(400).json({ message: 'Invalid credentials' });
 
-    if (!isMatch) {
-      return res.status(400).json({ message: 'Invalid credentials' });
-    }
-
+    // Just return wallet_balance set by admin
     res.json({
       message: 'Login successful',
-      user: {
-        id: user.id,
-        fullName: user.full_name,
-        email: user.email,
-        phone: user.phone
-      }
+      wallet_balance: user.wallet_balance
     });
 
   } catch (err) {
@@ -114,61 +64,46 @@ router.post('/login', async (req, res) => {
     res.status(500).json({ message: 'Server error' });
   }
 });
-
-
 // ==================
-// GET ALL USERS
+// GET WALLET INFO BY USER ID
 // ==================
-router.get('/all', async (req, res) => {
-
-  try {
-
-    const users = await pool.query(
-      'SELECT id, full_name, email, phone FROM services_users ORDER BY id DESC'
-    );
-
-    res.json({
-      total: users.rows.length,
-      users: users.rows
-    });
-
-  } catch (err) {
-
-    console.error(err);
-    res.status(500).json({ message: 'Server error' });
-
-  }
-
-});
-
-// ==================
-// GET USER BY ID
-// ==================
-router.get('/:id', async (req, res) => {
-
+router.get('/:id/wallet', async (req, res) => {
   const { id } = req.params;
 
   try {
-
-    const user = await pool.query(
-      'SELECT id, full_name, email, phone FROM services_users WHERE id = $1',
-      [id]
-    );
-
-    if (user.rows.length === 0) {
-      return res.status(404).json({ message: 'User not found' });
-    }
+    const user = await pool.query('SELECT wallet_balance FROM services_users WHERE id = $1', [id]);
+    if (user.rows.length === 0) return res.status(404).json({ message: 'User not found' });
 
     res.json(user.rows[0]);
-
   } catch (err) {
-
     console.error(err);
     res.status(500).json({ message: 'Server error' });
-
   }
-
 });
 
+// ==================
+// UPDATE USER WALLET (ADMIN)
+// ==================
+router.put('/:id/wallet', async (req, res) => {
+  const { id } = req.params;
+  const { amount } = req.body;
+
+  try {
+    const result = await pool.query(
+      `UPDATE services_users
+       SET wallet_balance = $1
+       WHERE id = $2
+       RETURNING wallet_balance`,
+      [amount, id]
+    );
+    if (result.rows.length === 0)
+      return res.status(404).json({ message: 'User not found' });
+
+    res.json({ message: 'Wallet updated successfully', wallet: result.rows[0] });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: 'Server error' });
+  }
+});
 
 module.exports = router;
