@@ -92,6 +92,8 @@ router.post('/login', async (req, res) => {
         serviceType: user.service_type,
         aadhaarUrl: user.aadhaar_url,
         panUrl: user.pan_url,
+                status: user.status   // <-- ADD THIS LINE
+
       },
     });
 
