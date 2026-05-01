@@ -133,4 +133,52 @@ router.put('/wallet/one-time', async (req, res) => {
     res.status(500).json({ message: 'Server error' });
   }
 });
+
+router.post("/apply", async (req, res) => {
+  try {
+    const { customerId, amount } = req.body;
+
+    if (!customerId || !amount || amount <= 0) {
+      return res.status(400).json({ message: "Invalid input" });
+    }
+
+    // 1. Get current balance
+    const userResult = await db.query(
+      "SELECT wallet_balance FROM users WHERE id = $1",
+      [customerId]
+    );
+
+    if (userResult.rows.length === 0) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    const currentBalance = parseFloat(userResult.rows[0].wallet_balance);
+
+    // 2. Validate balance
+    if (amount > currentBalance) {
+      return res.status(400).json({
+        message: "Insufficient wallet balance",
+        wallet_balance: currentBalance,
+      });
+    }
+
+    // 3. Deduct wallet
+    const newBalance = currentBalance - amount;
+
+    await db.query(
+      "UPDATE users SET wallet_balance = $1 WHERE id = $2",
+      [newBalance, customerId]
+    );
+
+    return res.json({
+      success: true,
+      deducted: amount,
+      wallet_balance: newBalance,
+    });
+  } catch (err) {
+    console.error("Wallet apply error:", err);
+    return res.status(500).json({ message: "Server error" });
+  }
+});
+
 module.exports = router;
