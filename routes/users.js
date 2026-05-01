@@ -144,7 +144,7 @@ router.post("/apply", async (req, res) => {
 
     // 1. Get current balance
     const userResult = await pool.query(
-      "SELECT wallet_balance FROM users WHERE id = $1",
+      "SELECT wallet_balance FROM services_users WHERE id = $1",
       [customerId]
     );
 
@@ -166,7 +166,7 @@ router.post("/apply", async (req, res) => {
     const newBalance = currentBalance - amount;
 
     await pool.query(
-      "UPDATE users SET wallet_balance = $1 WHERE id = $2",
+      "UPDATE services_users SET wallet_balance = $1 WHERE id = $2",
       [newBalance, customerId]
     );
 
