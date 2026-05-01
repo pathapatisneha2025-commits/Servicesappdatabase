@@ -165,7 +165,7 @@ router.post("/apply", async (req, res) => {
     // 3. Deduct wallet
     const newBalance = currentBalance - amount;
 
-    await db.query(
+    await pool.query(
       "UPDATE users SET wallet_balance = $1 WHERE id = $2",
       [newBalance, customerId]
     );
