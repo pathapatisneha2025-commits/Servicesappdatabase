@@ -143,7 +143,7 @@ router.post("/apply", async (req, res) => {
     }
 
     // 1. Get current balance
-    const userResult = await db.query(
+    const userResult = await pool.query(
       "SELECT wallet_balance FROM users WHERE id = $1",
       [customerId]
     );
