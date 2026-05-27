@@ -92,6 +92,25 @@ router.get('/:id', async (req, res) => {
   }
 });
 // ==================
+// GET ALL USERS (SELECT *)
+// ==================
+router.get('/all', async (req, res) => {
+  try {
+    const result = await pool.query(
+      'SELECT * FROM services_users ORDER BY id DESC'
+    );
+
+    res.json({
+      count: result.rows.length,
+      users: result.rows
+    });
+
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+// ==================
 // GET WALLET INFO BY USER ID
 // ==================
 router.get('/:id/wallet', async (req, res) => {
